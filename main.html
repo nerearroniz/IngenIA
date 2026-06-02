@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Map + Form Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 20px auto; }
+        #map { height: 400px; border: 1px solid #ccc; }
+        .row { display:flex; gap:20px; align-items:flex-start; }
+        .panel { flex:1; background:#fff; padding:12px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+        img.thumb { max-width:160px; display:block; margin-top:8px; border-radius:4px; }
+        small.hint { color:#666; display:block; margin-top:6px; }
+    </style>
+</head>
+<body>
+    <h1>Map Data Collector</h1>
+    <div class="row">
+        <div class="panel">
+            <h3>Add an item</h3>
+            <form id="entryForm">
+                <label>Type:
+                    <select id="type">
+                        <option value="place">Place</option>
+                        <option value="news">News</option>
+                        <option value="picture">Picture</option>
+                    </select>
+                </label><br><br>
+
+                <label>Title:<br><input id="title" required></label><br><br>
+                <label>Description:<br><textarea id="desc" rows="3"></textarea></label><br><br>
+
+                <label>Image (optional):<br><input id="image" type="file" accept="image/*"></label>
+                <small class="hint">Click on the map to pick location, then submit.</small>
+                <input type="hidden" id="lat">
+                <input type="hidden" id="lng"><br><br>
+
+                <label><input type="checkbox" id="useServer"> Use server persistence (POST /api/entries)</label><br><br>
+
+                <button type="submit">Save to map</button>
+                <button type="button" id="clear">Clear all</button>
+            </form>
+        </div>
+
+        <div class="panel" style="flex:2">
+            <h3>Map (click to choose location)</h3>
+            <div id="map"></div>
+            <small class="hint">Temporary pin shows where your entry will be placed.</small>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([20,0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        let tempMarker = null;
+        map.on('click', e => {
+            if (tempMarker) map.removeLayer(tempMarker);
+            tempMarker = L.marker(e.latlng).addTo(map);
+            document.getElementById('lat').value = e.latlng.lat;
+            document.getElementById('lng').value = e.latlng.lng;
+        });
+
+        function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+        function addMarker(entry){
+            const m = L.marker([entry.lat, entry.lng]).addTo(map);
+            const emoji = entry.type === 'news' ? '📰' : entry.type === 'picture' ? '🖼️' : '📍';
+            const img = entry.image ? `<img class="thumb" src="${entry.image}" alt="">` : '';
+            const popup = `<strong>${emoji} ${escapeHtml(entry.title)}</strong><br>${escapeHtml(entry.desc)}${img}`;
+            m.bindPopup(popup);
+        }
+
+        async function loadEntries(){
+            const useServer = document.getElementById('useServer').checked;
+            if (useServer) {
+                try {
+                    const res = await fetch('/api/entries');
+                    if (res.ok) {
+                        const entries = await res.json();
+                        entries.forEach(addMarker);
+                    }
+                } catch(err){ console.warn('Server fetch failed', err); }
+            } else {
+                const entries = JSON.parse(localStorage.getItem('mapData')||'[]');
+                entries.forEach(addMarker);
+            }
+        }
+
+        document.getElementById('useServer').addEventListener('change', () => {
+            // reload markers from selected source
+            location.reload();
+        });
+
+        document.getElementById('entryForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const type = document.getElementById('type').value;
+            const title = document.getElementById('title').value.trim();
+            const desc = document.getElementById('desc').value.trim();
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lng = parseFloat(document.getElementById('lng').value);
+            if (Number.isNaN(lat) || Number.isNaN(lng)) { alert('Please click the map to select a location.'); return; }
+
+            const file = document.getElementById('image').files[0];
+            const useServer = document.getElementById('useServer').checked;
+
+            const save = async (imageData) => {
+                const entry = { type, title, desc, lat, lng, image: imageData };
+                if (useServer) {
+                    try {
+                        await fetch('/api/entries', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(entry)
+                        });
+                        addMarker(entry);
+                    } catch(err){ alert('Failed to save to server.'); console.error(err); }
+                } else {
+                    const entries = JSON.parse(localStorage.getItem('mapData')||'[]');
+                    entries.push(entry);
+                    localStorage.setItem('mapData', JSON.stringify(entries));
+                    addMarker(entry);
+                }
+                e.target.reset();
+                if (tempMarker) { map.removeLayer(tempMarker); tempMarker = null; }
+                document.getElementById('lat').value = '';
+                document.getElementById('lng').value = '';
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => save(reader.result);
+                reader.readAsDataURL(file);
+            } else {
+                save(null);
+            }
+        });
+
+        document.getElementById('clear').addEventListener('click', async () => {
+            if (!confirm('Clear all saved entries?')) return;
+            const useServer = document.getElementById('useServer').checked;
+            if (useServer) {
+                try { await fetch('/api/entries/clear', { method: 'POST' }); location.reload(); }
+                catch(err){ alert('Failed to clear server entries'); }
+            } else {
+                localStorage.removeItem('mapData'); location.reload();
+            }
+        });
+
+        loadEntries();
+    </script>
+</body>
+</html>
