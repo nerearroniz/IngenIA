@@ -1,99 +1,1796 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <!-- Meta tags: provide metadata about the document -->
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="A simple HTML learning page">
-    
-        <!-- Title: appears in browser tab -->
-        <title>My Learning HTML Page</title>
-    
-        <!-- Style tag: for inline CSS (we'll learn CSS later!) -->
-        <style>
-                body {
-                        font-family: Arial, sans-serif;
-                        max-width: 800px;
-                        margin: 0 auto;
-                        padding: 20px;
-                        background-color: #f5f5f5;
-                }
-                h1 {
-                        color: #333;
-                        border-bottom: 2px solid #0066cc;
-                        padding-bottom: 10px;
-                }
-                .container {
-                        background-color: white;
-                        padding: 20px;
-                        border-radius: 5px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-        </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Local Food Systems – Gipuzkoa</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+/* ─── Reset ─────────────────────────────────── */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Arial,sans-serif; background:#f0f7f2; color:#1b4332; scroll-behavior:smooth; }
+
+/* ─── Main header ────────────────────────────── */
+.main-header {
+    background: linear-gradient(135deg,#052e16,#1b4332 50%,#2d6a4f);
+    color:white; padding:60px 40px; text-align:center;
+}
+.kicker { font-size:11px; letter-spacing:.2em; text-transform:uppercase; opacity:.6; margin-bottom:14px; }
+.main-header h1 { font-size:2.2rem; line-height:1.2; margin-bottom:16px; }
+.main-header > p { font-size:.95rem; line-height:1.8; max-width:700px; margin:0 auto; opacity:.88; }
+.tags { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:20px; }
+.tag  { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); padding:4px 14px; border-radius:20px; font-size:12px; }
+
+/* ─── Sticky nav ─────────────────────────────── */
+.sticky-nav {
+    position:sticky; top:0; z-index:1000;
+    background:#052e16; display:flex; align-items:center;
+    padding:0 20px; box-shadow:0 2px 10px rgba(0,0,0,.3);
+}
+.sticky-nav .brand { color:white; font-size:12px; opacity:.65; margin-right:auto; padding:12px 0; }
+.sticky-nav a {
+    color:rgba(255,255,255,.55); text-decoration:none;
+    padding:14px 16px; font-size:12px; font-weight:bold;
+    border-bottom:3px solid transparent; transition:all .2s; white-space:nowrap;
+}
+.sticky-nav a:hover { color:white; }
+.sticky-nav a.active { color:white; border-bottom-color:#52b788; }
+
+/* ─── Section headers ────────────────────────── */
+.section-header { padding:32px 40px; color:white; }
+.s-num { font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.65; margin-bottom:8px; }
+.section-header h2 { font-size:1.65rem; margin-bottom:8px; }
+.section-header p  { font-size:.88rem; opacity:.88; max-width:700px; line-height:1.65; }
+.sh-collect  { background:linear-gradient(135deg,#1b4332,#2d6a4f); }
+.sh-simulate { background:linear-gradient(135deg,#1e3a8a,#2563eb); }
+.sh-consumer { background:linear-gradient(135deg,#78350f,#d97706); }
+
+/* ─── Layout ─────────────────────────────────── */
+.section-body { max-width:1100px; margin:0 auto; padding:24px 20px 48px; }
+.row { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+.button-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* ─── Panel ──────────────────────────────────── */
+.panel { background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.07); padding:20px; margin-bottom:20px; }
+.panel > h3 { font-size:.76rem; text-transform:uppercase; letter-spacing:.07em; margin-bottom:14px; }
+
+/* ─── Form ───────────────────────────────────── */
+.fg { margin-bottom:12px; }
+.fg label { display:block; font-size:11px; font-weight:bold; color:#6b7280; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em; }
+.fg input[type="text"],
+.fg textarea,
+.fg select {
+    width:100%; padding:8px 10px; border:1px solid #e5e7eb;
+    border-radius:6px; font-size:13px; background:#fafafa; color:#1b4332; transition:border-color .18s;
+}
+.fg input:focus,.fg textarea:focus,.fg select:focus { outline:none; border-color:#2d6a4f; background:white; }
+.fg textarea { resize:vertical; }
+
+/* ─── Buttons ────────────────────────────────── */
+.btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold; transition:all .15s; }
+.btn:hover:not(:disabled) { opacity:.85; transform:translateY(-1px); }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn-green  { background:#2d6a4f; color:white; }
+.btn-blue   { background:#2563eb; color:white; }
+.btn-red    { background:#dc2626; color:white; }
+.btn-gray   { background:#e5e7eb; color:#374151; }
+.btn-purple { background:#7c3aed; color:white; }
+.load-label { display:inline-block; padding:8px 16px; background:#e5e7eb; color:#374151; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold; }
+.load-label:hover { background:#d1d5db; }
+
+/* ─── Mode toggle ────────────────────────────── */
+.mode-toggle { display:flex; border-radius:8px; overflow:hidden; border:2px solid #e5e7eb; margin-bottom:16px; }
+.mode-btn { flex:1; padding:10px 6px; border:none; cursor:pointer; font-size:12px; font-weight:bold; background:white; color:#888; transition:all .18s; }
+.mode-btn.active-source { background:#2d6a4f; color:white; }
+.mode-btn.active-issue  { background:#dc2626; color:white; }
+
+/* ─── Coords ─────────────────────────────────── */
+.coords-display { font-size:11px; color:#2d6a4f; background:#f0fdf4; border:1px solid #bbf7d0; padding:5px 10px; border-radius:4px; font-family:monospace; margin-top:6px; }
+.coords-display.empty { color:#9ca3af; background:#f9fafb; border-color:#e5e7eb; }
+small.hint { display:block; font-size:10px; color:#9ca3af; margin-top:5px; line-height:1.5; }
+code { background:#f0fdf4; padding:1px 5px; border-radius:3px; font-size:11px; color:#166534; }
+
+/* ─── Maps ───────────────────────────────────── */
+#map1 { height:400px; border-radius:8px; border:1px solid #e5e7eb; }
+#map2 { height:460px; border-radius:8px; border:1px solid #e5e7eb; cursor:default; }
+.map-controls { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.map-pill { padding:5px 12px; border:1.5px solid #e5e7eb; border-radius:16px; font-size:11px; font-weight:bold; cursor:pointer; background:white; color:#666; transition:all .15s; }
+.map-pill:hover { border-color:#2d6a4f; color:#1b4332; }
+.map-pill.active { background:#1b4332; color:white; border-color:#1b4332; }
+.map-pill.heat:hover { border-color:#f59e0b; }
+.map-pill.heat.active { background:#f59e0b; color:white; border-color:#f59e0b; }
+
+/* ─── Status ─────────────────────────────────── */
+#statusBar { font-size:12px; font-weight:bold; min-height:16px; margin-top:8px; }
+.folder-badge { font-size:12px; color:#1b4332; background:#dcfce7; padding:3px 10px; border-radius:16px; font-weight:bold; }
+.warning-box { background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:10px 14px; font-size:12px; color:#9a3412; margin-bottom:12px; }
+
+/* ─── Entry panels ───────────────────────────── */
+.entries-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+.ep { background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.07); overflow:hidden; }
+.ep-head { padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
+.ep-head h4 { font-size:13px; font-weight:bold; }
+.ep-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:bold; color:white; }
+.ep-src .ep-head { background:#f0fdf4; }
+.ep-src .ep-head h4 { color:#14532d; }
+.ep-src .ep-badge  { background:#16a34a; }
+.ep-iss .ep-head { background:#fef2f2; }
+.ep-iss .ep-head h4 { color:#7f1d1d; }
+.ep-iss .ep-badge  { background:#dc2626; }
+.ep-body { padding:6px; max-height:260px; overflow-y:auto; }
+.ec { display:flex; gap:8px; padding:8px 6px; border-radius:6px; cursor:pointer; border-bottom:1px solid #f9f9f9; transition:background .1s; align-items:flex-start; }
+.ec:last-child { border-bottom:none; }
+.ec:hover { background:#f9fafb; }
+.ec img { width:44px; height:44px; object-fit:cover; border-radius:4px; flex-shrink:0; }
+.ec-t { flex:1; min-width:0; }
+.ec-t strong { display:block; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#1b4332; }
+.ec-tag { display:inline-block; font-size:9px; font-weight:bold; padding:1px 6px; border-radius:6px; margin-top:2px; }
+.ec-t small { display:block; font-size:10px; color:#aaa; margin-top:2px; }
+.empty-msg { text-align:center; padding:20px; font-size:12px; color:#d1d5db; font-style:italic; }
+
+/* ─── Section divider ────────────────────────── */
+.sdiv { display:flex; align-items:center; gap:12px; margin:20px 0 14px; }
+.sdiv h3 { font-size:.95rem; white-space:nowrap; }
+.sdiv hr  { flex:1; border:none; border-top:1px solid #e5e7eb; }
+
+/* ─── Simulation ─────────────────────────────── */
+.sim-info { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; font-size:12px; color:#1e40af; line-height:1.7; margin-bottom:14px; }
+.sim-mode-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.sim-btn { padding:8px 14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold; background:white; color:#666; transition:all .18s; }
+.sim-btn:hover { border-color:#2563eb; }
+.sim-btn.active-select { border-color:#2563eb; background:#eff6ff; color:#1e40af; }
+.sim-btn.active-hub    { border-color:#7c3aed; background:#f5f3ff; color:#5b21b6; }
+.sim-src-icon,
+.sim-iss-icon,
+.sim-hub-icon {
+    background: transparent !important;
+    border: none !important;
+    pointer-events: auto !important;
+}
+.leaflet-sim-src,
+.leaflet-sim-iss,
+.leaflet-sim-hub {
+    background: transparent !important;
+    border: none !important;
+}
+.chain-display { display:flex; flex-wrap:wrap; gap:6px; min-height:38px; padding:8px 10px; background:#f8fafc; border-radius:6px; border:1.5px dashed #e2e8f0; align-items:center; }
+.cn-tag { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:14px; font-size:11px; font-weight:bold; background:#dbeafe; color:#1e40af; }
+.cn-tag.hub { background:#ede9fe; color:#5b21b6; }
+.cn-tag button { background:none; border:none; cursor:pointer; font-size:10px; color:inherit; padding:0 2px; opacity:.7; }
+.cn-tag button:hover { opacity:1; }
+.cn-arrow { font-size:12px; color:#cbd5e1; align-self:center; }
+.cn-empty { font-size:11px; color:#9ca3af; font-style:italic; }
+.metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.mc { text-align:center; padding:14px 8px; background:#f8fafc; border-radius:8px; border:1px solid #e5e7eb; }
+.mc .mv { font-size:1.5rem; font-weight:bold; }
+.mc .ml { font-size:10px; color:#888; margin-top:3px; line-height:1.3; }
+.mc.full { grid-column:1/-1; }
+.mc.full .mv { font-size:2rem; }
+.score-label { display:inline-block; padding:5px 16px; border-radius:20px; font-size:12px; font-weight:bold; }
+.friction-item { display:flex; align-items:center; gap:8px; padding:6px 8px; background:#fef2f2; border-radius:6px; margin-bottom:4px; font-size:12px; color:#7f1d1d; }
+.analysis-box { font-size:12px; line-height:1.9; color:#555; }
+.analysis-box strong { color:#1b4332; }
+
+/* ─── Consumer ───────────────────────────────── */
+.season-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:10px; }
+.season-card { background:white; border:2px solid #fbbf24; border-radius:8px; padding:10px 6px; text-align:center; }
+.season-card .se { font-size:1.5rem; }
+.season-card .sn { font-size:10px; font-weight:bold; color:#78350f; margin-top:4px; line-height:1.3; }
+.filter-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.ftab { padding:6px 14px; border:1.5px solid #e5e7eb; border-radius:16px; font-size:12px; font-weight:bold; cursor:pointer; background:white; color:#666; transition:all .15s; }
+.ftab:hover { border-color:#d97706; }
+.ftab.active { background:#d97706; color:white; border-color:#d97706; }
+.food-finder { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; }
+.ff-card { background:white; border-radius:10px; border:1px solid #e5e7eb; padding:16px; cursor:pointer; transition:all .18s; }
+.ff-card:hover { box-shadow:0 6px 16px rgba(0,0,0,.1); transform:translateY(-2px); }
+.ff-icon  { font-size:1.8rem; margin-bottom:6px; }
+.ff-title { font-size:13px; font-weight:bold; color:#1b4332; margin-bottom:4px; }
+.ff-tag   { display:inline-block; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:8px; margin-bottom:6px; }
+.ff-desc  { font-size:11px; color:#666; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ff-products { font-size:11px; color:#16a34a; margin-top:6px; font-style:italic; }
+.ff-empty { grid-column:1/-1; text-align:center; padding:32px; font-size:13px; color:#d1d5db; font-style:italic; }
+
+/* ─── Calendar ───────────────────────────────── */
+.cal-wrap { overflow-x:auto; }
+table.scal { border-collapse:collapse; width:100%; min-width:580px; font-size:11px; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+table.scal thead th { padding:8px 5px; background:#f9fafb; text-align:center; border-bottom:2px solid #e5e7eb; }
+table.scal thead th.cur { background:#d97706; color:white; }
+table.scal thead th.pc { text-align:left; padding-left:12px; min-width:140px; }
+table.scal tbody td { padding:4px; text-align:center; border-bottom:1px solid #f5f5f5; }
+table.scal tbody td.pn { text-align:left; padding-left:12px; font-size:11px; font-weight:bold; color:#1b4332; }
+table.scal tbody tr.cr td { background:#f3f4f6; font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:#9ca3af; padding:5px 12px; font-weight:bold; }
+.cd { display:inline-block; width:18px; height:18px; border-radius:50%; }
+.cd.on  { background:#86efac; }
+.cd.cur { outline:2px solid #d97706; outline-offset:1px; }
+
+/* ─── Footer ─────────────────────────────────── */
+footer { text-align:center; padding:24px; font-size:11px; color:#9ca3af; border-top:1px solid #dcfce7; }
+
+/* ─── Responsive ─────────────────────────────── */
+@media (max-width:680px) {
+    .entries-grid { grid-template-columns:1fr; }
+    .metrics-grid { grid-template-columns:1fr; }
+    .main-header  { padding:32px 20px; }
+    .main-header h1 { font-size:1.6rem; }
+    .section-header { padding:24px 20px; }
+    .sticky-nav .brand { display:none; }
+}
+    </style>
 </head>
 <body>
-        <!-- Header section -->
-        <div class="container">
-                <h1>Welcome to HTML Learning!</h1>
-        
-                <!-- Paragraph: basic text content -->
-                <p>This is my first HTML page. I'm learning how to structure web content!</p>
-        
-                <!-- Heading levels: h1 is largest, h6 is smallest -->
-                <h2>HTML Elements I'm Learning</h2>
-        
-                <!-- Unordered list: bullet points -->
-                <ul>
-                        <li>Headings (h1, h2, h3, etc.)</li>
-                        <li>Paragraphs (p tags)</li>
-                        <li>Lists (ul, ol, li)</li>
-                        <li>Links (a tags)</li>
-                        <li>Images (img tags)</li>
-                </ul>
-        
-                <!-- Ordered list: numbered -->
-                <ol>
-                        <li>Learn HTML structure</li>
-                        <li>Learn CSS styling</li>
-                        <li>Learn JavaScript interactivity</li>
-                </ol>
-        
-                <!-- Hyperlink: use href attribute to navigate -->
-                <p>Want to learn more? <a href="https://mentor-tecnun.github.io/TD_2025/content.html" target="_blank">Visit Nicolas Serrano</a></p>
-        
-                <!-- Image: src is the path, alt is text if image doesn't load -->
-                <img src="images/image.png" alt="Me and my friends" width="400">
-        
-                <!-- Horizontal rule: divider -->
-                <hr>
-        
-                <!-- Section with nested elements -->
-                <h2>HTML Form Example</h2>
-                <form>
-                        <!-- Text input -->
-                        <label for="name">Name:</label>
-                        <input type="text" id="name" name="name" placeholder="Enter your name">
-                        <br><br>
-            
-                        <!-- Email input -->
-                        <label for="email">Email:</label>
-                        <input type="email" id="email" name="email" placeholder="your@email.com">
-                        <br><br>
-            
-                        <!-- Text area: multi-line text -->
-                        <label for="message">Message:</label>
-                        <textarea id="message" name="message" rows="4" cols="30"></textarea>
-                        <br><br>
-            
-                        <!-- Button: clickable element -->
-                        <button type="submit">Submit</button>
-                </form>
-        
-                <!-- Footer section -->
-                <hr>
-                <footer>
-                        <p>&copy; 2026 My HTML Learning Project. Made with ❤️</p>
-                </footer>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════ -->
+<header class="main-header">
+    <p class="kicker">MIT · Field Research · Gipuzkoa, Spain · 2026</p>
+    <h1>🌿 Local Food Systems<br>Research Toolkit</h1>
+    <p>
+        A single-page research instrument for investigating regional food logistics in Gipuzkoa.
+        Collect field observations — food sources and freight problems —
+        simulate supply chain routes through your own data,
+        and explore what local sourcing means from a consumer perspective.
+    </p>
+    <div class="tags">
+        <span class="tag">🌾 Agri-food logistics</span>
+        <span class="tag">📍 Gipuzkoa, Spain</span>
+        <span class="tag">🔄 Short supply chains</span>
+        <span class="tag">🚛 Freight friction</span>
+        <span class="tag">🗺️ Spatial field research</span>
+    </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     STICKY NAV
+══════════════════════════════════════════ -->
+<nav class="sticky-nav">
+    <span class="brand">🌿 Local Food Toolkit</span>
+    <a href="#s1" data-sec="s1">01 · Field Collection</a>
+    <a href="#s2" data-sec="s2">02 · Chain Simulation</a>
+    <a href="#s3" data-sec="s3">03 · Consumer View</a>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     SECTION 1 — FIELD DATA COLLECTION
+══════════════════════════════════════════ -->
+<section id="s1" data-sec="s1">
+    <div class="section-header sh-collect">
+        <div class="s-num">Section 01</div>
+        <h2>🗺️ Field Data Collection</h2>
+        <p>
+            Pin two types of observations: <strong>Food Sources</strong> (farms, cooperatives,
+            markets, hubs) with their supply stage, transport mode, and origin; and
+            <strong>Freight Issues</strong> (congestion zones, loading problems, accidents)
+            documented in the field. Both feed directly into the simulation in Section 2.
+        </p>
+    </div>
+
+    <div class="section-body">
+
+        <!-- Data management -->
+        <div class="panel">
+            <h3 style="color:#2d6a4f">📂 Project Folder</h3>
+            <div id="noApiWarn" class="warning-box" style="display:none">
+                ⚠️ Your browser does not support the File System Access API.
+                Use <strong>Chrome or Edge</strong> for the full experience.
+                Use the JSON fallback below — images will be embedded as base64.
+            </div>
+            <div id="fsControls">
+                <div class="button-row">
+                    <button class="btn btn-green" id="btnOpenFolder">📁 Open project folder</button>
+                    <button class="btn btn-gray"  id="btnSave" disabled>💾 Save now</button>
+                    <span id="folderInfo"></span>
+                </div>
+            </div>
+            <div id="fallbackControls" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
+                <div class="button-row">
+                    <label class="load-label">📁 Load JSON <input type="file" id="loadJson" accept=".json" style="display:none"></label>
+                    <button class="btn btn-gray" id="downloadJson">⬇️ Download JSON</button>
+                </div>
+            </div>
+            <div id="statusBar"></div>
+            <small class="hint">Images save as real files inside an <code>images/</code> subfolder. Open the same folder next session to resume.</small>
         </div>
+
+        <!-- Form + Map row -->
+        <div class="row">
+
+            <!-- Form -->
+            <div class="panel" style="flex:1;min-width:260px;">
+                <h3 style="color:#2d6a4f">➕ Add an Observation</h3>
+
+                <div class="mode-toggle">
+                    <button class="mode-btn active-source" id="btnModeSrc" onclick="setMode('source')">🌱 Food Source</button>
+                    <button class="mode-btn"               id="btnModeIss" onclick="setMode('issue')">⚠️ Freight Issue</button>
+                </div>
+
+                <form id="entryForm">
+
+                    <!-- Source fields -->
+                    <div id="sourceFields">
+                        <div class="fg">
+                            <label>Source type</label>
+                            <select id="sourceType">
+                                <option value="farm">🌾 Farm</option>
+                                <option value="cooperative">🤝 Cooperative</option>
+                                <option value="market">🛒 Market / Shop</option>
+                                <option value="hub">📦 Distribution Hub</option>
+                                <option value="producer">🏭 Small Producer</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label>Supply stage</label>
+                            <select id="supplyStage">
+                                <option value="producer">Producer</option>
+                                <option value="processor">Processor</option>
+                                <option value="distributor">Distributor</option>
+                                <option value="retail">Retail</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label>Transport mode</label>
+                            <select id="transportMode">
+                                <option value="van">🚐 Farm van</option>
+                                <option value="truck">🚛 Truck</option>
+                                <option value="bike">🚲 Cargo bike</option>
+                                <option value="own">🚗 Own vehicle</option>
+                                <option value="third_party">📦 Third-party logistics</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label>Origin</label>
+                            <select id="originSelect">
+                                <option value="local">🟢 Local (&lt;30 km)</option>
+                                <option value="regional">🟡 Regional (&lt;150 km)</option>
+                                <option value="national">🟠 National</option>
+                                <option value="imported">🔴 Imported</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label>Main products (optional)</label>
+                            <input type="text" id="products" placeholder="e.g. tomatoes, peppers, cheese…">
+                        </div>
+                    </div>
+
+                    <!-- Issue fields -->
+                    <div id="issueFields" style="display:none">
+                        <div class="fg">
+                            <label>Issue type</label>
+                            <select id="issueType">
+                                <option value="congestion">🚦 Traffic congestion</option>
+                                <option value="loading_zone">🚧 Loading zone problem</option>
+                                <option value="accident">⚠️ Accident / incident</option>
+                                <option value="double_parking">🚗 Double parking</option>
+                                <option value="time_restriction">⏰ Time restriction</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Shared fields -->
+                    <div class="fg">
+                        <label>Title <span style="color:red">*</span></label>
+                        <input type="text" id="title" required placeholder="Short descriptive name…">
+                    </div>
+                    <div class="fg">
+                        <label>Description / Notes</label>
+                        <textarea id="desc" rows="3" placeholder="Context, observations, quotes…"></textarea>
+                    </div>
+                    <div class="fg">
+                        <label>Image (optional)</label>
+                        <input type="file" id="imageInput" accept="image/*">
+                        <div id="imgPreview"></div>
+                    </div>
+
+                    <input type="hidden" id="lat">
+                    <input type="hidden" id="lng">
+                    <div class="coords-display empty" id="coordsDisplay">📌 Click the map to select a location</div>
+                    <br>
+
+                    <div class="button-row">
+                        <button type="submit" class="btn btn-green">💾 Save observation</button>
+                        <button type="button" id="btnClearAll" class="btn btn-red">🗑️ Clear all</button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Map -->
+            <div class="panel" style="flex:2;min-width:300px;">
+                <h3 style="color:#2d6a4f">🗺️ Collection map</h3>
+                <div class="map-controls">
+                    <span class="map-pill active" onclick="setMapFilter(this,'all')">All</span>
+                    <span class="map-pill" onclick="setMapFilter(this,'source')">🌱 Sources</span>
+                    <span class="map-pill" onclick="setMapFilter(this,'issue')">⚠️ Issues</span>
+                    <span class="map-pill heat" id="heatToggle" onclick="toggleHeatmap()">🔥 Heatmap</span>
+                </div>
+                <div id="map1"></div>
+                <small class="hint">Click anywhere on the map to drop a pin, fill the form, then save.</small>
+            </div>
+
+        </div>
+
+        <!-- Entry panels -->
+        <div class="entries-grid">
+            <div class="ep ep-src">
+                <div class="ep-head">
+                    <h4>🌱 Food Sources</h4>
+                    <span class="ep-badge" id="srcCount">0</span>
+                </div>
+                <div class="ep-body" id="srcPanel">
+                    <p class="empty-msg">No sources added yet.</p>
+                </div>
+            </div>
+            <div class="ep ep-iss">
+                <div class="ep-head">
+                    <h4>⚠️ Freight Issues</h4>
+                    <span class="ep-badge" id="issCount">0</span>
+                </div>
+                <div class="ep-body" id="issPanel">
+                    <p class="empty-msg">No issues added yet.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 2 — SUPPLY CHAIN SIMULATION
+══════════════════════════════════════════ -->
+<section id="s2" data-sec="s2">
+    <div class="section-header sh-simulate">
+        <div class="s-num">Section 02</div>
+        <h2>🔗 Supply Chain Simulation</h2>
+        <p>
+            Your collected food sources appear as clickable nodes on the map.
+            Freight issue markers show known friction points.
+            Build an ordered supply chain by clicking nodes, optionally add a
+            hypothetical hub, and see live metrics — total km, CO₂, friction exposure,
+            and a shortness score.
+        </p>
+    </div>
+
+    <div class="section-body">
+
+        <div id="simNoData" class="panel">
+            <p style="text-align:center;color:#9ca3af;font-size:13px;padding:16px;">
+                📭 No food sources collected yet.<br>
+                <span style="font-size:12px;">Add farms, cooperatives, and markets in Section 1 — they appear here automatically.</span>
+            </p>
+        </div>
+
+        <div id="simContent" style="display:none;">
+
+            <!-- Controls -->
+            <div class="panel">
+                <h3 style="color:#2563eb">🎛️ Build your chain</h3>
+                <div class="sim-info">
+                    <strong>How to use:</strong> Click green source nodes on the map to add them to the chain in order.
+                    Switch to <em>Add hub</em> mode to test where a new distribution hub would reduce route length or bypass friction zones.
+                    Click a node again to remove it. Highlighted red markers are documented issues within 500 m of your route.
+                </div>
+                <div class="sim-mode-row">
+                    <button class="sim-btn active-select" id="simBtnSelect" onclick="setSimMode('select')">🖱️ Select nodes</button>
+                    <button class="sim-btn"               id="simBtnHub"    onclick="setSimMode('hub')">➕ Add hypothetical hub</button>
+                    <button class="btn btn-gray" onclick="clearChain()">↺ Clear chain</button>
+                    <button class="btn btn-gray" onclick="clearHubs()">✕ Remove hubs</button>
+                </div>
+                <div style="margin-bottom:6px;font-size:11px;font-weight:bold;color:#6b7280;">Chain order:</div>
+                <div class="chain-display" id="chainDisplay">
+                    <span class="cn-empty">No nodes selected — click source markers on the map above</span>
+                </div>
+            </div>
+
+            <!-- Map + Metrics row -->
+            <div class="row">
+
+                <!-- Map -->
+                <div class="panel" style="flex:2;min-width:300px;">
+                    <h3 style="color:#2563eb">🗺️ Simulation map</h3>
+                    <div id="map2"></div>
+                    <small class="hint">
+                        🟢 Green circles = food sources (click to chain) · 
+                        🔴 Red squares = freight issues · 
+                        🟣 Purple = hypothetical hub
+                    </small>
+                </div>
+
+                <!-- Metrics column -->
+                <div style="flex:1;min-width:240px;">
+
+                    <div class="panel">
+                        <h3 style="color:#2563eb">📊 Chain metrics</h3>
+                        <div class="metrics-grid">
+                            <div class="mc">
+                                <div class="mv" id="mDist" style="color:#2563eb">—</div>
+                                <div class="ml">Total km</div>
+                            </div>
+                            <div class="mc">
+                                <div class="mv" id="mCO2" style="color:#7c3aed">—</div>
+                                <div class="ml">kg CO₂ / tonne</div>
+                            </div>
+                            <div class="mc">
+                                <div class="mv" id="mFric" style="color:#dc2626">—</div>
+                                <div class="ml">Friction points</div>
+                            </div>
+                            <div class="mc">
+                                <div class="mv" id="mNodes" style="color:#16a34a">—</div>
+                                <div class="ml">Chain nodes</div>
+                            </div>
+                            <div class="mc full">
+                                <div class="mv" id="mScore" style="color:#d97706">—</div>
+                                <div class="ml">Shortness score / 100</div>
+                            </div>
+                        </div>
+                        <div style="text-align:center;margin-top:10px;">
+                            <span class="score-label" id="scoreLabel" style="background:#f3f4f6;color:#6b7280;">Select 2+ nodes to start</span>
+                        </div>
+                    </div>
+
+                    <div class="panel" id="frictionPanel" style="display:none;">
+                        <h3 style="color:#dc2626">⚠️ Issues on route</h3>
+                        <div id="frictionList"></div>
+                    </div>
+
+                    <div class="panel">
+                        <h3 style="color:#2563eb">📋 Analysis</h3>
+                        <div class="analysis-box" id="analysisBox">
+                            <span style="color:#9ca3af;font-style:italic;">Build a chain to see analysis.</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 3 — CONSUMER VIEW
+══════════════════════════════════════════ -->
+<section id="s3" data-sec="s3">
+    <div class="section-header sh-consumer">
+        <div class="s-num">Section 03</div>
+        <h2>🧺 Consumer View</h2>
+        <p>
+            What does the local food system look like from a shopper's perspective?
+            This section translates your field research into a practical guide: what's
+            available right now, where to find it, and the full rhythm of the agricultural year.
+        </p>
+    </div>
+
+    <div class="section-body">
+
+        <!-- In season now -->
+        <div class="panel">
+            <h3 style="color:#d97706">🌱 In season right now</h3>
+            <div class="season-grid" id="seasonNow"></div>
+            <small class="hint" id="seasonHint"></small>
+        </div>
+
+        <!-- Food finder -->
+        <div class="sdiv"><h3>📍 Local food sources from your fieldwork</h3><hr></div>
+
+        <div class="filter-tabs">
+            <button class="ftab active" onclick="setConsumerFilter(this,'all')">All</button>
+            <button class="ftab" onclick="setConsumerFilter(this,'farm')">🌾 Farms</button>
+            <button class="ftab" onclick="setConsumerFilter(this,'cooperative')">🤝 Cooperatives</button>
+            <button class="ftab" onclick="setConsumerFilter(this,'market')">🛒 Markets</button>
+            <button class="ftab" onclick="setConsumerFilter(this,'hub')">📦 Hubs</button>
+            <button class="ftab" onclick="setConsumerFilter(this,'producer')">🏭 Producers</button>
+        </div>
+
+        <div class="food-finder" id="foodFinder"></div>
+
+        <!-- Calendar -->
+        <div class="sdiv" style="margin-top:32px;"><h3>📅 Seasonal production calendar — Basque Country</h3><hr></div>
+
+        <div class="panel">
+            <div class="map-controls" style="margin-bottom:14px;">
+                <span class="map-pill active" onclick="setCalFilter(this,'all')">All</span>
+                <span class="map-pill" onclick="setCalFilter(this,'Vegetables')">🥦 Vegetables</span>
+                <span class="map-pill" onclick="setCalFilter(this,'Fruits')">🍓 Fruits</span>
+                <span class="map-pill" onclick="setCalFilter(this,'Legumes')">🫘 Legumes</span>
+                <span class="map-pill" onclick="setCalFilter(this,'Fish')">🐟 Fish</span>
+            </div>
+            <div class="cal-wrap">
+                <table class="scal" id="calTable"></table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<footer>
+    🌿 Local Food Systems Research Toolkit · Gipuzkoa, Spain · MIT 2026 · All data stored locally — no server required.
+</footer>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════ -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script>
+'use strict';
+
+// ════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════
+
+const SOURCE_TYPES = {
+    farm:        { emoji:'🌾', color:'#15803d', label:'Farm' },
+    cooperative: { emoji:'🤝', color:'#0d9488', label:'Cooperative' },
+    market:      { emoji:'🛒', color:'#0369a1', label:'Market' },
+    hub:         { emoji:'📦', color:'#6d28d9', label:'Hub' },
+    producer:    { emoji:'🏭', color:'#92400e', label:'Producer' }
+};
+
+const ISSUE_TYPES = {
+    congestion:       { emoji:'🚦', color:'#dc2626', label:'Congestion' },
+    loading_zone:     { emoji:'🚧', color:'#ea580c', label:'Loading Zone' },
+    accident:         { emoji:'⚠️',  color:'#b91c1c', label:'Accident' },
+    double_parking:   { emoji:'🚗', color:'#d97706', label:'Double Parking' },
+    time_restriction: { emoji:'⏰', color:'#7c3aed', label:'Time Restriction' }
+};
+
+const ORIGIN_COLOR = { local:'#16a34a', regional:'#ca8a04', national:'#ea580c', imported:'#dc2626' };
+const ORIGIN_LABEL = { local:'🟢 Local', regional:'🟡 Regional', national:'🟠 National', imported:'🔴 Imported' };
+const TRANSPORT_LABEL = { van:'🚐 Van', truck:'🚛 Truck', bike:'🚲 Bike', own:'🚗 Own', third_party:'📦 3PL' };
+const STAGE_LABEL = { producer:'Producer', processor:'Processor', distributor:'Distributor', retail:'Retail' };
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const NOW_MONTH = new Date().getMonth() + 1; // 1-based
+
+const SEASONAL_PRODUCTS = [
+    { name:'Tomatoes',      emoji:'🍅', cat:'Vegetables', months:[7,8,9] },
+    { name:'Peppers',       emoji:'🫑', cat:'Vegetables', months:[7,8,9,10] },
+    { name:'Courgette',     emoji:'🥒', cat:'Vegetables', months:[6,7,8,9] },
+    { name:'Aubergine',     emoji:'🍆', cat:'Vegetables', months:[7,8,9] },
+    { name:'Corn',          emoji:'🌽', cat:'Vegetables', months:[8,9] },
+    { name:'Peas',          emoji:'🫛', cat:'Vegetables', months:[4,5,6] },
+    { name:'Asparagus',     emoji:'🌿', cat:'Vegetables', months:[4,5,6] },
+    { name:'Artichokes',    emoji:'🌱', cat:'Vegetables', months:[3,4,5,10,11] },
+    { name:'Lettuce',       emoji:'🥬', cat:'Vegetables', months:[4,5,6,9,10,11] },
+    { name:'Broccoli',      emoji:'🥦', cat:'Vegetables', months:[3,4,5,10,11,12] },
+    { name:'Cabbage',       emoji:'🥬', cat:'Vegetables', months:[11,12,1,2,3] },
+    { name:'Leeks',         emoji:'🌾', cat:'Vegetables', months:[10,11,12,1,2,3] },
+    { name:'Onions',        emoji:'🧅', cat:'Vegetables', months:[6,7,8,9,10,11] },
+    { name:'Garlic',        emoji:'🧄', cat:'Vegetables', months:[6,7,8,9] },
+    { name:'Pumpkin',       emoji:'🎃', cat:'Vegetables', months:[9,10,11,12] },
+    { name:'Strawberries',  emoji:'🍓', cat:'Fruits',     months:[5,6] },
+    { name:'Cherries',      emoji:'🍒', cat:'Fruits',     months:[5,6] },
+    { name:'Peaches',       emoji:'🍑', cat:'Fruits',     months:[7,8] },
+    { name:'Pears',         emoji:'🍐', cat:'Fruits',     months:[8,9,10] },
+    { name:'Basque Apples', emoji:'🍎', cat:'Fruits',     months:[9,10,11,12,1] },
+    { name:'Grapes',        emoji:'🍇', cat:'Fruits',     months:[9,10] },
+    { name:'Chestnuts',     emoji:'🌰', cat:'Fruits',     months:[10,11] },
+    { name:'Blackberries',  emoji:'🫐', cat:'Fruits',     months:[8,9] },
+    { name:'Tolosa Beans',  emoji:'🫘', cat:'Legumes',    months:[10,11,12,1] },
+    { name:'Chickpeas',     emoji:'🟡', cat:'Legumes',    months:[9,10,11] },
+    { name:'Lentils',       emoji:'🟤', cat:'Legumes',    months:[9,10,11] },
+    { name:'Anchovy',       emoji:'🐠', cat:'Fish',       months:[4,5,6] },
+    { name:'Bonito',        emoji:'🐟', cat:'Fish',       months:[6,7,8,9] },
+    { name:'Sardines',      emoji:'🐟', cat:'Fish',       months:[6,7,8,9] },
+    { name:'Hake',          emoji:'🐟', cat:'Fish',       months:[1,2,3,4,10,11,12] },
+    { name:'Cod',           emoji:'🐟', cat:'Fish',       months:[10,11,12,1,2,3] }
+];
+
+// ════════════════════════════════════════════
+//  SHARED STATE
+// ════════════════════════════════════════════
+
+let entries        = [];
+let projectDir     = null;
+let imagesDir      = null;
+let imageUrlCache  = {};
+let currentMode    = 'source';
+let mapFilter      = 'all';
+let consumerFilter = 'all';
+let calFilter      = 'all';
+let heatLayer      = null;
+let heatVisible    = false;
+let tempMarker     = null;
+let map1Markers    = {};        // entryId → L.Marker
+let simSrcMarkers  = {};        // entryId → L.Marker (sim map source nodes)
+let simIssMarkers  = {};        // entryId → L.Marker (sim map issue nodes)
+let simHubMarkers  = [];        // { id, marker, node } for hypothetical hubs
+let chainNodes     = [];        // ordered array of { id, lat, lng, label, type }
+let routeLines     = [];        // L.Polyline objects currently on map2
+let simMode        = 'select';  // 'select' | 'hub'
+
+// ════════════════════════════════════════════
+//  BROWSER SUPPORT
+// ════════════════════════════════════════════
+
+const HAS_FS_API = 'showDirectoryPicker' in window;
+if (!HAS_FS_API) {
+    document.getElementById('noApiWarn').style.display        = 'block';
+    document.getElementById('fsControls').style.display       = 'none';
+    document.getElementById('fallbackControls').style.display = 'block';
+}
+
+// ════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════
+
+function escapeHtml(s) {
+    return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+}
+
+function setStatus(msg, isError = false) {
+    const el = document.getElementById('statusBar');
+    el.textContent = msg;
+    el.style.color = isError ? '#dc2626' : '#16a34a';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+// Haversine distance in km between two lat/lng points
+function haversine(lat1, lng1, lat2, lng2) {
+    const R    = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLng = (lng2-lng1)*Math.PI/180;
+    const a    = Math.sin(dLat/2)**2 +
+                 Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Shortest distance from point P to segment AB (in km)
+function pointToSegDist(plat, plng, alat, alng, blat, blng) {
+    const dx = blng-alng, dy = blat-alat;
+    if (dx===0 && dy===0) return haversine(plat,plng,alat,alng);
+    const t  = Math.max(0, Math.min(1,
+        ((plng-alng)*dx + (plat-alat)*dy) / (dx*dx+dy*dy)
+    ));
+    return haversine(plat, plng, alat+t*dy, alng+t*dx);
+}
+
+function generateFilename(title, file) {
+    const ext  = (file.name.split('.').pop()||'jpg').toLowerCase();
+    const safe = title.toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+    return `${Date.now()}_${safe}.${ext}`;
+}
+
+// ════════════════════════════════════════════
+//  FILE SYSTEM HELPERS
+// ════════════════════════════════════════════
+
+async function fsSaveImage(file, filename) {
+    try {
+        const fh = await imagesDir.getFileHandle(filename, { create:true });
+        const w  = await fh.createWritable();
+        await w.write(file); await w.close();
+        return true;
+    } catch(e) { console.error(e); return false; }
+}
+
+async function fsLoadImage(filename) {
+    if (!imagesDir || !filename) return null;
+    if (imageUrlCache[filename])  return imageUrlCache[filename];
+    try {
+        const fh  = await imagesDir.getFileHandle(filename);
+        const f   = await fh.getFile();
+        const url = URL.createObjectURL(f);
+        imageUrlCache[filename] = url;
+        return url;
+    } catch { return null; }
+}
+
+async function fsSaveJson() {
+    if (!projectDir) return;
+    try {
+        const payload = entries.map(({ _imageUrl, ...rest }) => rest);
+        const fh = await projectDir.getFileHandle('data.json', { create:true });
+        const w  = await fh.createWritable();
+        await w.write(JSON.stringify(payload, null, 2));
+        await w.close();
+    } catch(e) { console.error('Auto-save failed:', e); }
+}
+
+// ════════════════════════════════════════════
+//  MAP 1 — COLLECTION
+// ════════════════════════════════════════════
+
+const map1 = L.map('map1').setView([43.15, -2.08], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'© OpenStreetMap contributors'
+}).addTo(map1);
+
+map1.on('click', e => {
+    if (tempMarker) map1.removeLayer(tempMarker);
+    tempMarker = L.marker(e.latlng).addTo(map1);
+    tempMarker.bindPopup('📌 Pending entry…').openPopup();
+
+    document.getElementById('lat').value = e.latlng.lat;
+    document.getElementById('lng').value = e.latlng.lng;
+
+    const d = document.getElementById('coordsDisplay');
+    d.textContent = `📌 ${e.latlng.lat.toFixed(5)},  ${e.latlng.lng.toFixed(5)}`;
+    d.classList.remove('empty');
+});
+
+// ════════════════════════════════════════════
+//  MAP 2 — SIMULATION
+// ════════════════════════════════════════════
+
+const map2 = L.map('map2').setView([43.15, -2.08], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map2);
+
+// ── Fix: call invalidateSize when section 2 becomes visible ───────────────
+new IntersectionObserver((obs) => {
+    obs.forEach(entry => {
+        if (entry.isIntersecting) {
+            map2.invalidateSize();
+        }
+    });
+}, { threshold: 0.1 }).observe(document.getElementById('s2'));
+
+// ── Fix: single map click handler — no marker click handlers at all ───────
+// All node selection goes through here, avoiding all bubbling issues.
+map2.on('click', function(e) {
+    const RADIUS_PX = 26; // pixel hit area around each node
+    const clickPt   = map2.latLngToContainerPoint(e.latlng);
+
+    // 1. Check hypothetical hub markers
+    for (const hubObj of simHubMarkers) {
+        const mPt = map2.latLngToContainerPoint(hubObj.marker.getLatLng());
+        if (clickPt.distanceTo(mPt) < RADIUS_PX) {
+            handleSimHubClick(hubObj.node);
+            return;
+        }
+    }
+
+    // 2. Check source markers (only in select mode)
+    if (simMode === 'select') {
+        for (const [id, marker] of Object.entries(simSrcMarkers)) {
+            const mPt = map2.latLngToContainerPoint(marker.getLatLng());
+            if (clickPt.distanceTo(mPt) < RADIUS_PX) {
+                const entry = entries.find(en => en.id == id);
+                if (entry) {
+                    handleSimNodeClick(entry, marker);
+                    return;
+                }
+            }
+        }
+    }
+
+    // 3. Nothing hit — place hub if in hub mode
+    if (simMode === 'hub') {
+        addHypotheticalHub(e.latlng);
+    }
+});
+
+// ── Cursor feedback: pointer when hovering near a selectable node ─────────
+map2.on('mousemove', function(e) {
+    if (simMode === 'hub') {
+        map2.getContainer().style.cursor = 'crosshair';
+        return;
+    }
+
+    const RADIUS_PX = 26;
+    const movePt    = map2.latLngToContainerPoint(e.latlng);
+    let   nearNode  = false;
+
+    for (const [, marker] of Object.entries(simSrcMarkers)) {
+        const mPt = map2.latLngToContainerPoint(marker.getLatLng());
+        if (movePt.distanceTo(mPt) < RADIUS_PX) { nearNode = true; break; }
+    }
+    if (!nearNode) {
+        for (const hubObj of simHubMarkers) {
+            const mPt = map2.latLngToContainerPoint(hubObj.marker.getLatLng());
+            if (movePt.distanceTo(mPt) < RADIUS_PX) { nearNode = true; break; }
+        }
+    }
+
+    map2.getContainer().style.cursor = nearNode ? 'pointer' : '';
+});
+
+// ════════════════════════════════════════════
+//  FORM MODE TOGGLE  (source / issue)
+// ════════════════════════════════════════════
+
+function setMode(m) {
+    currentMode = m;
+    document.getElementById('sourceFields').style.display = m === 'source' ? '' : 'none';
+    document.getElementById('issueFields').style.display  = m === 'issue'  ? '' : 'none';
+    document.getElementById('btnModeSrc').className =
+        'mode-btn' + (m === 'source' ? ' active-source' : '');
+    document.getElementById('btnModeIss').className =
+        'mode-btn' + (m === 'issue'  ? ' active-issue'  : '');
+}
+
+// ════════════════════════════════════════════
+//  IMAGE PREVIEW
+// ════════════════════════════════════════════
+
+document.getElementById('imageInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    const prev = document.getElementById('imgPreview');
+    if (!file) { prev.innerHTML = ''; return; }
+    const url = URL.createObjectURL(file);
+    prev.innerHTML = `
+        <div style="position:relative;display:inline-block;margin-top:6px;">
+            <img src="${url}"
+                 style="max-width:100px;max-height:70px;border-radius:4px;object-fit:cover;">
+            <button type="button"
+                    onclick="clearImgPreview('${url}')"
+                    style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;
+                           background:#dc2626;color:white;border:none;border-radius:50%;
+                           cursor:pointer;font-size:10px;">✕</button>
+        </div>`;
+});
+
+function clearImgPreview(url) {
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imgPreview').innerHTML = '';
+    URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════
+//  FORM SUBMIT
+// ════════════════════════════════════════════
+
+document.getElementById('entryForm').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const mode  = currentMode;
+    const title = document.getElementById('title').value.trim();
+    const desc  = document.getElementById('desc').value.trim();
+    const lat   = parseFloat(document.getElementById('lat').value);
+    const lng   = parseFloat(document.getElementById('lng').value);
+
+    if (isNaN(lat) || isNaN(lng)) {
+        alert('Click the map to select a location first.');
+        return;
+    }
+
+    const imageFile = document.getElementById('imageInput').files[0];
+    let imageFilename   = null;
+    let imageDisplayUrl = null;
+
+    if (imageFile) {
+        if (imagesDir) {
+            // FS API mode — save as a real file
+            imageFilename = generateFilename(title, imageFile);
+            if (await fsSaveImage(imageFile, imageFilename)) {
+                imageDisplayUrl = URL.createObjectURL(imageFile);
+                imageUrlCache[imageFilename] = imageDisplayUrl;
+            } else {
+                imageFilename = null;
+            }
+        } else {
+            // Fallback — base64 inside JSON
+            imageFilename = await new Promise(resolve => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result);
+                r.readAsDataURL(imageFile);
+            });
+            imageDisplayUrl = imageFilename;
+        }
+    }
+
+    const entry = {
+        id:         Date.now(),
+        mode,
+        title, desc, lat, lng,
+        image:      imageFilename,
+        _imageUrl:  imageDisplayUrl,
+        created_at: new Date().toISOString(),
+        // Source-specific fields
+        ...(mode === 'source' && {
+            sourceType:    document.getElementById('sourceType').value,
+            supplyStage:   document.getElementById('supplyStage').value,
+            transportMode: document.getElementById('transportMode').value,
+            origin:        document.getElementById('originSelect').value,
+            products:      document.getElementById('products').value.trim()
+        }),
+        // Issue-specific fields
+        ...(mode === 'issue' && {
+            issueType: document.getElementById('issueType').value
+        })
+    };
+
+    entries.push(entry);
+    addToMap1(entry);
+    addToMap2(entry);
+    renderEntryPanels();
+    renderFoodFinder();
+    updateSimVisibility();
+
+    if (projectDir) await fsSaveJson();
+
+    // Reset form
+    if (tempMarker) { map1.removeLayer(tempMarker); tempMarker = null; }
+    e.target.reset();
+    document.getElementById('imgPreview').innerHTML = '';
+    document.getElementById('lat').value = '';
+    document.getElementById('lng').value = '';
+    const d = document.getElementById('coordsDisplay');
+    d.textContent = '📌 Click the map to select a location';
+    d.classList.add('empty');
+    setMode(currentMode);
+
+    setStatus(`✅ "${title}" saved! (${entries.length} total)`);
+});
+
+// ════════════════════════════════════════════
+//  MAP 1 MARKERS + FILTER + HEATMAP
+// ════════════════════════════════════════════
+
+function makeMap1Icon(entry) {
+    const isSource = entry.mode === 'source';
+    const cfg      = isSource
+        ? (SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm)
+        : (ISSUE_TYPES[entry.issueType]   || ISSUE_TYPES.congestion);
+    // Sources = circles, Issues = rounded squares
+    const radius = isSource ? '50%' : '4px';
+    return L.divIcon({
+        html: `<div style="
+            width:30px;height:30px;background:${cfg.color};
+            border:2px solid white;border-radius:${radius};
+            display:flex;align-items:center;justify-content:center;
+            font-size:13px;box-shadow:0 2px 5px rgba(0,0,0,.3);">${cfg.emoji}</div>`,
+        iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-18], className:''
+    });
+}
+
+function addToMap1(entry) {
+    const isSource = entry.mode === 'source';
+    const cfg      = isSource
+        ? (SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm)
+        : (ISSUE_TYPES[entry.issueType]   || ISSUE_TYPES.congestion);
+    const dateStr  = new Date(entry.created_at).toLocaleDateString();
+    const imgHtml  = entry._imageUrl
+        ? `<img src="${entry._imageUrl}"
+               style="max-width:120px;border-radius:4px;margin-top:6px;display:block;">`
+        : '';
+
+    let meta = '';
+    if (isSource) {
+        meta = `<em style="font-size:10px;color:#888;">
+            ${STAGE_LABEL[entry.supplyStage]||''} ·
+            ${TRANSPORT_LABEL[entry.transportMode]||''} ·
+            ${ORIGIN_LABEL[entry.origin]||''}
+        </em>`;
+        if (entry.products)
+            meta += `<br><span style="font-size:11px;color:#16a34a;">${escapeHtml(entry.products)}</span>`;
+    } else {
+        meta = `<em style="font-size:10px;color:#888;">${cfg.label}</em>`;
+    }
+
+    const popup = `
+        <strong>${cfg.emoji} ${escapeHtml(entry.title)}</strong><br>
+        ${meta}<br>
+        <span style="font-size:10px;color:#aaa;">${dateStr}</span>
+        <br><br>${escapeHtml(entry.desc)}${imgHtml}`;
+
+    const m = L.marker([entry.lat, entry.lng], { icon: makeMap1Icon(entry) }).addTo(map1);
+    m.bindPopup(popup);
+    m._entryMode = entry.mode;
+    map1Markers[entry.id] = m;
+    applyMap1Filter();
+}
+
+function applyMap1Filter() {
+    Object.entries(map1Markers).forEach(([, m]) => {
+        const show = mapFilter === 'all' || m._entryMode === mapFilter;
+        if (show && !map1.hasLayer(m)) m.addTo(map1);
+        if (!show &&  map1.hasLayer(m)) map1.removeLayer(m);
+    });
+    updateHeatmap();
+}
+
+function setMapFilter(el, filter) {
+    mapFilter = filter;
+    document.querySelectorAll('#s1 .map-pill:not(.heat)').forEach(p =>
+        p.classList.remove('active'));
+    el.classList.add('active');
+    applyMap1Filter();
+}
+
+function toggleHeatmap() {
+    heatVisible = !heatVisible;
+    document.getElementById('heatToggle').classList.toggle('active', heatVisible);
+    updateHeatmap();
+}
+
+function updateHeatmap() {
+    if (heatLayer) { map1.removeLayer(heatLayer); heatLayer = null; }
+    if (!heatVisible) return;
+    const points = entries
+        .filter(e => mapFilter === 'all' || e.mode === mapFilter)
+        .map(e  => [e.lat, e.lng, 1]);
+    if (points.length === 0) return;
+    heatLayer = L.heatLayer(points, { radius:35, blur:20, maxZoom:14 }).addTo(map1);
+}
+
+function focusMap1(id) {
+    const m = map1Markers[id];
+    if (!m) return;
+    map1.setView(m.getLatLng(), 14, { animate:true });
+    m.openPopup();
+    document.getElementById('map1').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+// ════════════════════════════════════════════
+//  ENTRY PANELS
+// ════════════════════════════════════════════
+
+function renderEntryPanels() {
+    const sources = entries.filter(e => e.mode === 'source');
+    const issues  = entries.filter(e => e.mode === 'issue');
+
+    document.getElementById('srcCount').textContent = sources.length;
+    document.getElementById('issCount').textContent = issues.length;
+
+    renderPanel('srcPanel', sources, 'source');
+    renderPanel('issPanel', issues,  'issue');
+}
+
+function renderPanel(panelId, list, mode) {
+    const el = document.getElementById(panelId);
+    if (list.length === 0) {
+        el.innerHTML = `<p class="empty-msg">
+            No ${mode === 'source' ? 'sources' : 'issues'} added yet.</p>`;
+        return;
+    }
+    el.innerHTML = [...list].reverse().map(entry => {
+        const cfg = mode === 'source'
+            ? (SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm)
+            : (ISSUE_TYPES[entry.issueType]   || ISSUE_TYPES.congestion);
+        const imgTag     = entry._imageUrl ? `<img src="${entry._imageUrl}" alt="">` : '';
+        const tagColor   = mode === 'source'
+            ? (ORIGIN_COLOR[entry.origin] || '#888')
+            : cfg.color;
+        const tagLabel   = mode === 'source'
+            ? (ORIGIN_LABEL[entry.origin] || '')
+            : cfg.label;
+        return `
+            <div class="ec" onclick="focusMap1(${entry.id})">
+                ${imgTag}
+                <div class="ec-t">
+                    <strong>${cfg.emoji} ${escapeHtml(entry.title)}</strong>
+                    <span class="ec-tag"
+                          style="background:${tagColor}22;color:${tagColor};">
+                        ${tagLabel}
+                    </span>
+                    ${entry.products
+                        ? `<small style="color:#16a34a;">
+                               ${escapeHtml(entry.products)}</small>`
+                        : ''}
+                    <small>${new Date(entry.created_at).toLocaleDateString()}</small>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// ════════════════════════════════════════════
+//  MAP 2 ICONS
+// ════════════════════════════════════════════
+
+function makeSimSrcIcon(entry, inChain) {
+    const cfg    = SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm;
+    const size   = inChain ? 40 : 32;
+    const border = inChain ? '3px solid #2563eb' : '2px solid white';
+    const ring   = inChain ? '0 0 0 4px rgba(37,99,235,0.25),' : '';
+    return L.divIcon({
+        html: `<div style="
+            width:${size}px; height:${size}px;
+            background:${cfg.color};
+            border:${border}; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:${inChain ? 17 : 14}px;
+            box-shadow:${ring} 0 2px 8px rgba(0,0,0,.3);
+        ">${cfg.emoji}</div>`,
+        iconSize:    [size, size],
+        iconAnchor:  [size/2, size/2],
+        popupAnchor: [0, -size/2],
+        className:   'leaflet-sim-src'
+    });
+}
+
+function makeSimIssIcon(entry) {
+    const cfg = ISSUE_TYPES[entry?.issueType] || ISSUE_TYPES.congestion;
+    return L.divIcon({
+        html: `<div style="
+            width:26px; height:26px;
+            background:${cfg.color};
+            border:2px solid white; border-radius:4px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:12px; box-shadow:0 2px 5px rgba(0,0,0,.3);
+        ">${cfg.emoji}</div>`,
+        iconSize:   [26, 26],
+        iconAnchor: [13, 13],
+        className:  'leaflet-sim-iss'
+    });
+}
+
+function makeHubIcon() {
+    return L.divIcon({
+        html: `<div style="
+            width:36px; height:36px;
+            background:#7c3aed;
+            border:2px solid white; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,.3);
+        ">📦</div>`,
+        iconSize:   [36, 36],
+        iconAnchor: [18, 18],
+        className:  'leaflet-sim-hub'
+    });
+}
+
+// ════════════════════════════════════════════
+//  MAP 2 POPULATE
+// ════════════════════════════════════════════
+
+function addToMap2(entry) {
+    if (entry.mode === 'source') {
+        const m = L.marker([entry.lat, entry.lng], {
+            icon:        makeSimSrcIcon(entry, false),
+            interactive: false   // ← all clicks fall through to map
+        }).addTo(map2);
+        simSrcMarkers[entry.id] = m;
+
+    } else {
+        const m = L.marker([entry.lat, entry.lng], {
+            icon:        makeSimIssIcon(entry),
+            interactive: false
+        }).addTo(map2);
+        simIssMarkers[entry.id] = m;
+    }
+}
+
+// ════════════════════════════════════════════
+//  SIMULATION CONTROLS
+// ════════════════════════════════════════════
+
+function setSimMode(m) {
+    simMode = m;
+    document.getElementById('simBtnSelect').className =
+        'sim-btn' + (m === 'select' ? ' active-select' : '');
+    document.getElementById('simBtnHub').className    =
+        'sim-btn' + (m === 'hub'    ? ' active-hub'    : '');
+    map2.getContainer().style.cursor = m === 'hub' ? 'crosshair' : '';
+}
+
+function addHypotheticalHub(latlng) {
+    const id   = `hub_${Date.now()}`;
+    const node = { id, lat: latlng.lat, lng: latlng.lng,
+                   label: 'Hyp. Hub', type: 'hub' };
+
+    const m = L.marker(latlng, {
+        icon:        makeHubIcon(),
+        interactive: false   // ← detected via proximity in map click handler
+    }).addTo(map2);
+
+    simHubMarkers.push({ id, marker: m, node });
+    setSimMode('select'); // revert mode after placing
+}
+
+function handleSimNodeClick(entry) {
+    const idx = chainNodes.findIndex(n => n.id === entry.id);
+    if (idx >= 0) {
+        chainNodes.splice(idx, 1);
+    } else {
+        chainNodes.push({
+            id:         entry.id,
+            lat:        entry.lat,
+            lng:        entry.lng,
+            label:      entry.title,
+            type:       'source',
+            sourceType: entry.sourceType
+        });
+    }
+    refreshSimIcons();
+    updateSimulation();
+}
+
+function handleSimHubClick(node) {
+    const idx = chainNodes.findIndex(n => n.id === node.id);
+    if (idx >= 0) chainNodes.splice(idx, 1);
+    else          chainNodes.push(node);
+    updateSimulation();
+}
+
+function refreshSimIcons() {
+    const inChain = new Set(chainNodes.map(n => n.id));
+    Object.entries(simSrcMarkers).forEach(([id, m]) => {
+        const entry = entries.find(e => e.id == id);
+        if (entry) m.setIcon(makeSimSrcIcon(entry, inChain.has(entry.id)));
+    });
+}
+
+function clearChain() {
+    chainNodes = [];
+    refreshSimIcons();
+    updateSimulation();
+}
+
+function clearHubs() {
+    simHubMarkers.forEach(({ marker }) => map2.removeLayer(marker));
+    simHubMarkers = [];
+    chainNodes = chainNodes.filter(n => n.type !== 'hub');
+    refreshSimIcons();
+    updateSimulation();
+}
+
+function removeFromChain(id) {
+    // id may be numeric (source) or string (hub)
+    chainNodes = chainNodes.filter(n => n.id != id);
+    refreshSimIcons();
+    updateSimulation();
+}
+
+// ════════════════════════════════════════════
+//  SIMULATION CALCULATION + RENDER
+// ════════════════════════════════════════════
+
+function updateSimulation() {
+    // ── Chain display tags ───────────────────
+    const cd = document.getElementById('chainDisplay');
+    if (chainNodes.length === 0) {
+        cd.innerHTML = `<span class="cn-empty">
+            No nodes selected — click source markers on the map above</span>`;
+    } else {
+        cd.innerHTML = chainNodes.map((n, i) => {
+            const isHub = n.type === 'hub';
+            const emoji = isHub
+                ? '📦'
+                : (SOURCE_TYPES[n.sourceType]?.emoji || '📍');
+            return `
+                ${i > 0 ? '<span class="cn-arrow">→</span>' : ''}
+                <span class="cn-tag${isHub ? ' hub' : ''}">
+                    ${emoji} ${escapeHtml(n.label)}
+                    <button onclick="removeFromChain('${n.id}')"
+                            title="Remove">✕</button>
+                </span>`;
+        }).join('');
+    }
+
+    // ── Route lines ──────────────────────────
+    routeLines.forEach(l => map2.removeLayer(l));
+    routeLines = [];
+
+    if (chainNodes.length >= 2) {
+        const latlngs = chainNodes.map(n => [n.lat, n.lng]);
+        const line = L.polyline(latlngs, {
+            color:'#2563eb', weight:3, opacity:.8, dashArray:'6,5'
+        }).addTo(map2);
+        routeLines.push(line);
+    }
+
+    // ── Not enough nodes yet ─────────────────
+    if (chainNodes.length < 2) {
+        ['mDist','mCO2','mFric','mNodes','mScore'].forEach(id => {
+            document.getElementById(id).textContent = '—';
+        });
+        document.getElementById('mNodes').textContent =
+            chainNodes.length || '—';
+        document.getElementById('scoreLabel').textContent = 'Select 2+ nodes to start';
+        document.getElementById('scoreLabel').style =
+            'background:#f3f4f6;color:#6b7280;padding:5px 16px;border-radius:20px;font-size:12px;font-weight:bold;display:inline-block;';
+        document.getElementById('frictionPanel').style.display = 'none';
+        document.getElementById('analysisBox').innerHTML =
+            '<span style="color:#9ca3af;font-style:italic;">Build a chain to see analysis.</span>';
+        return;
+    }
+
+    // ── Total distance ───────────────────────
+    let totalKm = 0;
+    for (let i = 1; i < chainNodes.length; i++) {
+        totalKm += haversine(
+            chainNodes[i-1].lat, chainNodes[i-1].lng,
+            chainNodes[i].lat,   chainNodes[i].lng
+        );
+    }
+
+    // ── CO₂ (truck 0.16 kg CO₂e / tonne-km) ─
+    const co2 = (totalKm * 0.16).toFixed(1);
+
+    // ── Friction: issues within 500 m of route
+    const issueEntries = entries.filter(e => e.mode === 'issue');
+    const frictionFound = [];
+    issueEntries.forEach(issue => {
+        for (let i = 1; i < chainNodes.length; i++) {
+            const d = pointToSegDist(
+                issue.lat, issue.lng,
+                chainNodes[i-1].lat, chainNodes[i-1].lng,
+                chainNodes[i].lat,   chainNodes[i].lng
+            );
+            if (d < 0.5 && !frictionFound.find(f => f.id === issue.id)) {
+                frictionFound.push(issue);
+            }
+        }
+    });
+
+    // ── Shortness score ──────────────────────
+    const intermediaries = Math.max(0, chainNodes.length - 2);
+    const score = Math.max(0, Math.round(
+        100 - (15 * intermediaries) - (totalKm * 0.04) - (10 * frictionFound.length)
+    ));
+
+    let scoreLabel, scoreBg, scoreColor;
+    if      (score >= 75) { scoreLabel='🌟 Ultra-short chain'; scoreBg='#dcfce7'; scoreColor='#166534'; }
+    else if (score >= 50) { scoreLabel='✅ Short supply chain'; scoreBg='#d1fae5'; scoreColor='#059669'; }
+    else if (score >= 25) { scoreLabel='⚠️ Semi-conventional';  scoreBg='#fef9c3'; scoreColor='#ca8a04'; }
+    else                  { scoreLabel='❌ Conventional chain'; scoreBg='#fee2e2'; scoreColor='#dc2626'; }
+
+    // ── Update metric cards ──────────────────
+    document.getElementById('mDist').textContent  = `${totalKm.toFixed(1)} km`;
+    document.getElementById('mCO2').textContent   = `${co2} kg`;
+    document.getElementById('mFric').textContent  = frictionFound.length;
+    document.getElementById('mNodes').textContent = chainNodes.length;
+
+    const mScore = document.getElementById('mScore');
+    mScore.textContent  = score;
+    mScore.style.color  = scoreColor;
+
+    const sl = document.getElementById('scoreLabel');
+    sl.textContent = scoreLabel;
+    sl.style = `background:${scoreBg};color:${scoreColor};padding:5px 16px;
+                border-radius:20px;font-size:12px;font-weight:bold;display:inline-block;`;
+
+    // ── Friction panel ───────────────────────
+    const fp = document.getElementById('frictionPanel');
+    const fl = document.getElementById('frictionList');
+    if (frictionFound.length > 0) {
+        fp.style.display = '';
+        fl.innerHTML = frictionFound.map(f => {
+            const cfg = ISSUE_TYPES[f.issueType] || ISSUE_TYPES.congestion;
+            return `
+                <div class="friction-item">
+                    ${cfg.emoji}
+                    <span>
+                        <strong>${escapeHtml(f.title)}</strong><br>
+                        <span style="font-size:10px;opacity:.8;">${cfg.label}</span>
+                    </span>
+                </div>`;
+        }).join('');
+    } else {
+        fp.style.display = 'none';
+    }
+
+    // ── Analysis text ────────────────────────
+    const first  = chainNodes[0];
+    const last   = chainNodes[chainNodes.length - 1];
+    const hasHub = chainNodes.some(n => n.type === 'hub');
+    let analysis = '';
+    analysis += `This chain covers <strong>${totalKm.toFixed(1)} km</strong> from
+        <strong>${escapeHtml(first.label)}</strong> to
+        <strong>${escapeHtml(last.label)}</strong> across
+        <strong>${chainNodes.length} nodes</strong>
+        (${intermediaries} intermediar${intermediaries===1?'y':'ies'}).<br><br>`;
+    analysis += `Transport emissions: <strong>${co2} kg CO₂ per tonne</strong>
+        (truck factor 0.16 kg CO₂e / tonne-km).<br><br>`;
+    if (frictionFound.length > 0) {
+        analysis += `⚠️ <strong>${frictionFound.length} documented freight
+            issue${frictionFound.length>1?'s':''}</strong> lie within 500 m of this
+            route — consider rerouting or addressing these points.<br><br>`;
+    } else {
+        analysis += `✅ No documented freight issues detected along this route.<br><br>`;
+    }
+    if (hasHub) {
+        analysis += `💡 A <strong>hypothetical hub</strong> is part of this chain.
+            Remove it and rebuild to compare scores with and without the hub.`;
+    }
+    document.getElementById('analysisBox').innerHTML = analysis;
+}
+
+function updateSimVisibility() {
+    const hasSources = entries.some(e => e.mode === 'source');
+    document.getElementById('simNoData').style.display  = hasSources ? 'none' : '';
+    document.getElementById('simContent').style.display = hasSources ? ''     : 'none';
+}
+
+// ════════════════════════════════════════════
+//  CONSUMER VIEW — SEASON NOW
+// ════════════════════════════════════════════
+
+function buildSeasonNow() {
+    const inSeason = SEASONAL_PRODUCTS.filter(p => p.months.includes(NOW_MONTH));
+    const monthName = MONTHS_SHORT[NOW_MONTH - 1];
+
+    document.getElementById('seasonNow').innerHTML = inSeason.map(p => `
+        <div class="season-card">
+            <div class="se">${p.emoji}</div>
+            <div class="sn">${p.name}</div>
+        </div>`).join('');
+
+    document.getElementById('seasonHint').textContent =
+        `${inSeason.length} products in season in ${monthName} in the Basque Country.
+         Source them locally to minimise food miles.`;
+}
+
+// ════════════════════════════════════════════
+//  CONSUMER VIEW — FOOD FINDER
+// ════════════════════════════════════════════
+
+function setConsumerFilter(el, filter) {
+    consumerFilter = filter;
+    document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderFoodFinder();
+}
+
+function renderFoodFinder() {
+    const el = document.getElementById('foodFinder');
+    const list = entries.filter(e => {
+        if (e.mode !== 'source') return false;
+        return consumerFilter === 'all' || e.sourceType === consumerFilter;
+    });
+
+    if (list.length === 0) {
+        el.innerHTML = `<div class="ff-empty">
+            ${consumerFilter === 'all'
+                ? 'No sources collected yet — add farms, markets and cooperatives in Section 1.'
+                : `No ${consumerFilter} entries collected yet.`}
+        </div>`;
+        return;
+    }
+
+    el.innerHTML = list.map(entry => {
+        const cfg = SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm;
+        const oc  = ORIGIN_COLOR[entry.origin] || '#888';
+        const ol  = ORIGIN_LABEL[entry.origin] || '';
+        return `
+            <div class="ff-card" onclick="focusMap1(${entry.id})">
+                <div class="ff-icon">${cfg.emoji}</div>
+                <div class="ff-title">${escapeHtml(entry.title)}</div>
+                <span class="ff-tag" style="background:${oc}22;color:${oc};">${ol}</span>
+                <div class="ff-desc">${escapeHtml(entry.desc) || 'No description.'}</div>
+                ${entry.products
+                    ? `<div class="ff-products">🌱 ${escapeHtml(entry.products)}</div>`
+                    : ''}
+            </div>`;
+    }).join('');
+}
+
+// ════════════════════════════════════════════
+//  SEASONAL CALENDAR
+// ════════════════════════════════════════════
+
+function setCalFilter(el, filter) {
+    calFilter = filter;
+    document.querySelectorAll('#s3 .map-pill').forEach(p =>
+        p.classList.remove('active'));
+    el.classList.add('active');
+    buildCalendar();
+}
+
+function buildCalendar() {
+    const visible = calFilter === 'all'
+        ? SEASONAL_PRODUCTS
+        : SEASONAL_PRODUCTS.filter(p => p.cat === calFilter);
+
+    const cats = [...new Set(visible.map(p => p.cat))];
+    const CAT_COLOR = {
+        Vegetables:'#86efac', Fruits:'#fca5a5',
+        Legumes:'#c4b5fd',    Fish:'#7dd3fc'
+    };
+    const table = document.getElementById('calTable');
+
+    let html = '<thead><tr>';
+    html += `<th class="pc">Product</th>`;
+    MONTHS_SHORT.forEach((m, i) => {
+        html += `<th class="${i+1===NOW_MONTH ? 'cur' : ''}">${m}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    cats.forEach(cat => {
+        html += `<tr class="cr"><td colspan="13">${cat}</td></tr>`;
+        visible.filter(p => p.cat === cat).forEach(p => {
+            html += `<tr><td class="pn">${p.emoji} ${p.name}</td>`;
+            for (let m = 1; m <= 12; m++) {
+                const on  = p.months.includes(m);
+                const cur = m === NOW_MONTH;
+                const bg  = CAT_COLOR[cat] || '#86efac';
+                html += `<td>${on
+                    ? `<span class="cd on${cur?' cur':''}"
+                              style="background:${bg};"></span>`
+                    : (cur
+                        ? `<span class="cd cur"
+                                  style="background:transparent;"></span>`
+                        : '')
+                }</td>`;
+            }
+            html += '</tr>';
+        });
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+//  STICKY NAV — HIGHLIGHT ACTIVE SECTION
+// ════════════════════════════════════════════
+
+const sectionObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const id = entry.target.id;
+            document.querySelectorAll('.sticky-nav a').forEach(a =>
+                a.classList.toggle('active', a.dataset.sec === id));
+        }
+    });
+}, { threshold: 0.25 });
+
+['s1','s2','s3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sectionObserver.observe(el);
+});
+
+// ════════════════════════════════════════════
+//  FOLDER CONTROLS
+// ════════════════════════════════════════════
+
+document.getElementById('btnOpenFolder').addEventListener('click', async () => {
+    try {
+        projectDir = await window.showDirectoryPicker({ mode:'readwrite' });
+        imagesDir  = await projectDir.getDirectoryHandle('images', { create:true });
+
+        document.getElementById('folderInfo').innerHTML =
+            `<span class="folder-badge">📁 ${projectDir.name}</span>`;
+        document.getElementById('btnSave').disabled = false;
+
+        // Try to load existing data.json
+        try {
+            const fh     = await projectDir.getFileHandle('data.json');
+            const file   = await fh.getFile();
+            const loaded = JSON.parse(await file.text());
+
+            if (!Array.isArray(loaded)) throw new Error('Not an array');
+
+            // Clear existing markers
+            Object.values(map1Markers).forEach(m => map1.removeLayer(m));
+            Object.values(simSrcMarkers).forEach(m => map2.removeLayer(m));
+            Object.values(simIssMarkers).forEach(m => map2.removeLayer(m));
+            map1Markers = {}; simSrcMarkers = {}; simIssMarkers = {};
+            imageUrlCache = {};
+            entries = loaded;
+
+            // Resolve image display URLs from images/ folder
+            for (const entry of entries) {
+                if (entry.image) entry._imageUrl = await fsLoadImage(entry.image);
+            }
+
+            entries.forEach(entry => { addToMap1(entry); addToMap2(entry); });
+            renderEntryPanels();
+            renderFoodFinder();
+            updateSimVisibility();
+
+            if (entries.length > 0) {
+                const bounds = L.latLngBounds(entries.map(e => [e.lat, e.lng]));
+                map1.fitBounds(bounds, { padding:[40,40] });
+                map2.fitBounds(bounds, { padding:[40,40] });
+            }
+
+            setStatus(`✅ ${entries.length} entries loaded from ${projectDir.name}/`);
+
+        } catch(le) {
+            if (le.name === 'NotFoundError')
+                setStatus('📂 New project folder — ready to add entries.');
+            else {
+                console.error(le);
+                setStatus('⚠️ Could not read data.json', true);
+            }
+        }
+    } catch(e) {
+        if (e.name !== 'AbortError') {
+            console.error(e);
+            setStatus('Could not open folder.', true);
+        }
+    }
+});
+
+document.getElementById('btnSave').addEventListener('click', async () => {
+    await fsSaveJson();
+    setStatus(`✅ Saved ${entries.length} entries to ${projectDir.name}/data.json`);
+});
+
+// ════════════════════════════════════════════
+//  CLEAR ALL
+// ════════════════════════════════════════════
+
+document.getElementById('btnClearAll').addEventListener('click', () => {
+    if (!confirm('Remove all entries and markers? This cannot be undone.')) return;
+
+    Object.values(map1Markers).forEach(m => map1.removeLayer(m));
+    Object.values(simSrcMarkers).forEach(m => map2.removeLayer(m));
+    Object.values(simIssMarkers).forEach(m => map2.removeLayer(m));
+    map1Markers = {}; simSrcMarkers = {}; simIssMarkers = {};
+    imageUrlCache = {};
+
+    if (tempMarker) { map1.removeLayer(tempMarker); tempMarker = null; }
+    if (heatLayer)  { map1.removeLayer(heatLayer);  heatLayer  = null; }
+
+    routeLines.forEach(l => map2.removeLayer(l));
+    routeLines = []; chainNodes = [];
+
+    entries = [];
+    renderEntryPanels();
+    renderFoodFinder();
+    updateSimVisibility();
+    updateSimulation();
+
+    document.getElementById('lat').value = '';
+    document.getElementById('lng').value = '';
+    const d = document.getElementById('coordsDisplay');
+    d.textContent = '📌 Click the map to select a location';
+    d.classList.add('empty');
+
+    setStatus('🗑️ All entries cleared.');
+});
+
+// ════════════════════════════════════════════
+//  FALLBACK: LOAD / DOWNLOAD JSON
+// ════════════════════════════════════════════
+
+document.getElementById('loadJson').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const loaded = JSON.parse(await file.text());
+        if (!Array.isArray(loaded)) { alert('Expected a JSON array.'); return; }
+
+        Object.values(map1Markers).forEach(m => map1.removeLayer(m));
+        Object.values(simSrcMarkers).forEach(m => map2.removeLayer(m));
+        Object.values(simIssMarkers).forEach(m => map2.removeLayer(m));
+        map1Markers = {}; simSrcMarkers = {}; simIssMarkers = {};
+
+        entries = loaded;
+        // In fallback, entry.image IS the base64 src
+        entries.forEach(entry => {
+            entry._imageUrl = entry.image || null;
+            addToMap1(entry);
+            addToMap2(entry);
+        });
+        renderEntryPanels();
+        renderFoodFinder();
+        updateSimVisibility();
+
+        if (entries.length > 0) {
+            const bounds = L.latLngBounds(entries.map(e => [e.lat, e.lng]));
+            map1.fitBounds(bounds, { padding:[40,40] });
+            map2.fitBounds(bounds, { padding:[40,40] });
+        }
+
+        setStatus(`✅ ${entries.length} entries loaded.`);
+    } catch { alert('Invalid JSON file.'); }
+    e.target.value = '';
+});
+
+document.getElementById('downloadJson').addEventListener('click', () => {
+    if (entries.length === 0) { alert('No entries to download yet.'); return; }
+    const payload = entries.map(({ _imageUrl, ...rest }) => rest);
+    const blob    = new Blob([JSON.stringify(payload, null, 2)],
+                              { type:'application/json' });
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement('a');
+    a.href = url;
+    a.download = `local_food_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`⬇️ Downloaded ${entries.length} entries.`);
+});
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+
+setMode('source');
+buildSeasonNow();
+buildCalendar();
+renderFoodFinder();
+updateSimVisibility();
+
+</script>
 </body>
 </html>

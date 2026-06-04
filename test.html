@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <!-- Meta tags: provide metadata about the document -->
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="A simple HTML learning page">
+    
+        <!-- Title: appears in browser tab -->
+        <title>My Learning HTML Page</title>
+    
+        <!-- Style tag: for inline CSS (we'll learn CSS later!) -->
+        <style>
+                body {
+                        font-family: Arial, sans-serif;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #f5f5f5;
+                }
+                h1 {
+                        color: #333;
+                        border-bottom: 2px solid #0066cc;
+                        padding-bottom: 10px;
+                }
+                .container {
+                        background-color: white;
+                        padding: 20px;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+        </style>
+</head>
+<body>
+        <!-- Header section -->
+        <div class="container">
+                <h1>Welcome to HTML Learning!</h1>
+        
+                <!-- Paragraph: basic text content -->
+                <p>This is my first HTML page. I'm learning how to structure web content!</p>
+        
+                <!-- Heading levels: h1 is largest, h6 is smallest -->
+                <h2>HTML Elements I'm Learning</h2>
+        
+                <!-- Unordered list: bullet points -->
+                <ul>
+                        <li>Headings (h1, h2, h3, etc.)</li>
+                        <li>Paragraphs (p tags)</li>
+                        <li>Lists (ul, ol, li)</li>
+                        <li>Links (a tags)</li>
+                        <li>Images (img tags)</li>
+                </ul>
+        
+                <!-- Ordered list: numbered -->
+                <ol>
+                        <li>Learn HTML structure</li>
+                        <li>Learn CSS styling</li>
+                        <li>Learn JavaScript interactivity</li>
+                </ol>
+        
+                <!-- Hyperlink: use href attribute to navigate -->
+                <p>Want to learn more? <a href="https://mentor-tecnun.github.io/TD_2025/content.html" target="_blank">Visit Nicolas Serrano</a></p>
+        
+                <!-- Image: src is the path, alt is text if image doesn't load -->
+                <img src="images/image.png" alt="Me and my friends" width="400">
+        
+                <!-- Horizontal rule: divider -->
+                <hr>
+        
+                <!-- Section with nested elements -->
+                <h2>HTML Form Example</h2>
+                <form>
+                        <!-- Text input -->
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your name">
+                        <br><br>
+            
+                        <!-- Email input -->
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" placeholder="your@email.com">
+                        <br><br>
+            
+                        <!-- Text area: multi-line text -->
+                        <label for="message">Message:</label>
+                        <textarea id="message" name="message" rows="4" cols="30"></textarea>
+                        <br><br>
+            
+                        <!-- Button: clickable element -->
+                        <button type="submit">Submit</button>
+                </form>
+        
+                <!-- Footer section -->
+                <hr>
+                <footer>
+                        <p>&copy; 2026 My HTML Learning Project. Made with ❤️</p>
+                </footer>
+        </div>
+</body>
+</html>
