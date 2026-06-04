@@ -3,6 +3,7 @@
 
 A single-page, browser-based research instrument for investigating regional food logistics and short supply chains in the Basque Country. Built without a server, framework, or database — everything runs locally in your browser and saves to a folder on your computer.
 
+Visit the [website](https://nerearroniz.github.io/IngenIA/).
 ---
 
 ## What it is
