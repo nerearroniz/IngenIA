@@ -190,6 +190,21 @@ code { background:#f0fdf4; padding:1px 5px; border-radius:3px; font-size:11px; c
 .ff-products { font-size:11px; color:#16a34a; margin-top:6px; font-style:italic; }
 .ff-empty { grid-column:1/-1; text-align:center; padding:32px; font-size:13px; color:#d1d5db; font-style:italic; }
 
+/* ─── Consumer proximity map ─────────────────── */
+.btn-orange                      { background:#d97706; color:white; }
+.btn-orange:hover:not(:disabled) { background:#b45309; }
+
+.dist-badge {
+    display:inline-block; font-size:10px; font-weight:bold;
+    padding:2px 8px; border-radius:8px;
+    background:#fef9c3; color:#92400e; margin-top:4px;
+}
+
+.leaflet-user-icon,
+.leaflet-map3-src { background:transparent !important; border:none !important; }
+
+#map3 { height:320px; border-radius:8px; border:1px solid #fde68a; }
+
 /* ─── Calendar ───────────────────────────────── */
 .cal-wrap { overflow-x:auto; }
 table.scal { border-collapse:collapse; width:100%; min-width:580px; font-size:11px; background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
@@ -223,8 +238,8 @@ footer { text-align:center; padding:24px; font-size:11px; color:#9ca3af; border-
      HEADER
 ══════════════════════════════════════════ -->
 <header class="main-header">
-    <p class="kicker">MIT · Field Research · Gipuzkoa, Spain · 2026</p>
-    <h1>🌿 Local Food Systems<br>Research Toolkit</h1>
+    <p class="kicker">Field Research · Gipuzkoa, Spain · 2026</p>
+    <h1>🌿 Logistics for Local Food Systems<br>Research Toolkit</h1>
     <p>
         A single-page research instrument for investigating regional food logistics in Gipuzkoa.
         Collect field observations — food sources and freight problems —
@@ -571,8 +586,47 @@ footer { text-align:center; padding:24px; font-size:11px; color:#9ca3af; border-
             <small class="hint" id="seasonHint"></small>
         </div>
 
-        <!-- Food finder -->
-        <div class="sdiv"><h3>📍 Local food sources from your fieldwork</h3><hr></div>
+        <!-- ── Near me map ─────────────────────────── -->
+        <div class="panel">
+            <h3 style="color:#d97706">📍 Find food near you</h3>
+
+            <div class="button-row" style="margin-bottom:14px;">
+                <button class="btn btn-orange" id="btnGPS">📡 Use my GPS</button>
+                <button class="btn btn-gray"   id="btnClearLoc" style="display:none">
+                    ✕ Clear location
+                </button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <label style="font-size:12px;font-weight:bold;color:#6b7280;">
+                        Radius:
+                    </label>
+                    <select id="radiusSel"
+                            style="padding:6px 10px;border:1px solid #e5e7eb;
+                                border-radius:6px;font-size:13px;">
+                        <option value="2">2 km</option>
+                        <option value="5" selected>5 km</option>
+                        <option value="10">10 km</option>
+                        <option value="20">20 km</option>
+                        <option value="50">50 km</option>
+                    </select>
+                </div>
+                <span id="nearStatus"
+                    style="font-size:12px;font-weight:bold;color:#d97706;"></span>
+            </div>
+
+            <div id="map3"></div>
+            <small class="hint">
+                Click the map to pin your position &nbsp;·&nbsp;
+                📡 uses GPS &nbsp;·&nbsp;
+                Bright circles = within radius &nbsp;·&nbsp;
+                Sources below sort by distance automatically
+            </small>
+        </div>
+
+        <!-- ── Food finder ──────────────────────────── -->
+        <div class="sdiv">
+            <h3>🛒 Local food sources from your fieldwork</h3>
+            <hr>
+        </div>
 
         <div class="filter-tabs">
             <button class="ftab active" onclick="setConsumerFilter(this,'all')">All</button>
@@ -892,6 +946,209 @@ map2.on('mousemove', function(e) {
 });
 
 // ════════════════════════════════════════════
+//  MAP 3 — CONSUMER PROXIMITY
+// ════════════════════════════════════════════
+
+const map3 = L.map('map3', { zoomControl: true })
+               .setView([43.15, -2.08], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap contributors'
+}).addTo(map3);
+
+// Fix: render properly when section 3 scrolls into view
+new IntersectionObserver(obs => {
+    obs.forEach(e => { if (e.isIntersecting) map3.invalidateSize(); });
+}, { threshold: 0.1 }).observe(document.getElementById('s3'));
+
+// ── State ─────────────────────────────────────────────────────────────────
+let userLat        = null;
+let userLng        = null;
+let userMarker     = null;
+let radiusCircle   = null;
+let map3SrcMarkers = {};   // entryId → L.Marker
+
+// ── Icons ─────────────────────────────────────────────────────────────────
+
+function makeUserIcon() {
+    return L.divIcon({
+        html: `<div style="
+            width:18px; height:18px;
+            background:#2563eb;
+            border:3px solid white;
+            border-radius:50%;
+            box-shadow:0 0 0 5px rgba(37,99,235,.2),
+                       0 2px 8px rgba(0,0,0,.35);
+        "></div>`,
+        iconSize:   [18, 18],
+        iconAnchor: [9, 9],
+        className:  'leaflet-user-icon'
+    });
+}
+
+function makeMap3SrcIcon(entry, isNear) {
+    const cfg  = SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm;
+    const size = isNear ? 34 : 24;
+    const op   = isNear ? '1' : '0.35';
+    return L.divIcon({
+        html: `<div style="
+            width:${size}px; height:${size}px;
+            background:${cfg.color};
+            border:2px solid white; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:${isNear ? 16 : 11}px;
+            opacity:${op};
+            box-shadow:0 2px 6px rgba(0,0,0,.25);
+        ">${cfg.emoji}</div>`,
+        iconSize:    [size, size],
+        iconAnchor:  [size/2, size/2],
+        popupAnchor: [0, -size/2],
+        className:   'leaflet-map3-src'
+    });
+}
+
+// ── Set user position ─────────────────────────────────────────────────────
+
+function setUserLocation(lat, lng) {
+    userLat = lat;
+    userLng = lng;
+
+    // Replace user marker
+    if (userMarker)   { map3.removeLayer(userMarker);   userMarker = null; }
+    if (radiusCircle) { map3.removeLayer(radiusCircle); radiusCircle = null; }
+
+    userMarker = L.marker([lat, lng], {
+        icon: makeUserIcon(), zIndexOffset: 1000
+    }).addTo(map3).bindPopup('📍 Your position');
+
+    const km = parseInt(document.getElementById('radiusSel').value);
+    radiusCircle = L.circle([lat, lng], {
+        radius:      km * 1000,
+        color:       '#d97706',
+        fillColor:   '#fef9c3',
+        fillOpacity: 0.12,
+        weight:      2,
+        dashArray:   '6,4'
+    }).addTo(map3);
+
+    document.getElementById('nearStatus').textContent =
+        `📍 Location set · showing within ${km} km`;
+    document.getElementById('btnClearLoc').style.display = '';
+
+    refreshMap3Icons();
+    renderFoodFinder();
+    map3.fitBounds(radiusCircle.getBounds(), { padding: [24, 24] });
+}
+
+// ── Clear user location ───────────────────────────────────────────────────
+
+function clearUserLocation() {
+    userLat = null;
+    userLng = null;
+    if (userMarker)   { map3.removeLayer(userMarker);   userMarker   = null; }
+    if (radiusCircle) { map3.removeLayer(radiusCircle); radiusCircle = null; }
+
+    document.getElementById('nearStatus').textContent     = '';
+    document.getElementById('btnClearLoc').style.display  = 'none';
+
+    refreshMap3Icons();
+    renderFoodFinder();
+}
+
+// ── Refresh icon sizes based on current radius ────────────────────────────
+
+function refreshMap3Icons() {
+    const km = userLat !== null
+        ? parseInt(document.getElementById('radiusSel').value)
+        : null;
+
+    Object.entries(map3SrcMarkers).forEach(([id, m]) => {
+        const entry = entries.find(e => e.id == id);
+        if (!entry) return;
+        const isNear = km === null || haversine(userLat, userLng,
+                                                entry.lat, entry.lng) <= km;
+        m.setIcon(makeMap3SrcIcon(entry, isNear));
+        updateMap3Popup(m, entry);
+    });
+}
+
+function updateMap3Popup(marker, entry) {
+    const cfg  = SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm;
+    const dist = userLat !== null
+        ? `<br><strong style="color:#d97706;">
+               ${haversine(userLat, userLng, entry.lat, entry.lng).toFixed(1)} km away
+           </strong>`
+        : '';
+    const prods = entry.products
+        ? `<br><span style="font-size:11px;color:#16a34a;">
+               🌱 ${escapeHtml(entry.products)}</span>`
+        : '';
+    marker.bindPopup(
+        `<strong>${cfg.emoji} ${escapeHtml(entry.title)}</strong>${dist}${prods}`
+    );
+}
+
+// ── Add a source entry to map3 ────────────────────────────────────────────
+
+function addToMap3(entry) {
+    if (entry.mode !== 'source') return;
+    if (map3SrcMarkers[entry.id]) return;
+
+    const km     = userLat !== null
+        ? parseInt(document.getElementById('radiusSel').value)
+        : null;
+    const isNear = km === null ||
+                   haversine(userLat, userLng, entry.lat, entry.lng) <= km;
+
+    const m = L.marker([entry.lat, entry.lng], {
+        icon: makeMap3SrcIcon(entry, isNear)
+    }).addTo(map3);
+
+    updateMap3Popup(m, entry);
+    map3SrcMarkers[entry.id] = m;
+}
+
+// ── Radius selector ───────────────────────────────────────────────────────
+
+document.getElementById('radiusSel').addEventListener('change', () => {
+    if (userLat === null) return;
+    const km = parseInt(document.getElementById('radiusSel').value);
+    if (radiusCircle) radiusCircle.setRadius(km * 1000);
+    document.getElementById('nearStatus').textContent =
+        `📍 Location set · showing within ${km} km`;
+    map3.fitBounds(radiusCircle.getBounds(), { padding: [24, 24] });
+    refreshMap3Icons();
+    renderFoodFinder();
+});
+
+// ── GPS button ────────────────────────────────────────────────────────────
+
+document.getElementById('btnGPS').addEventListener('click', () => {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.\nClick the map to set your position manually.');
+        return;
+    }
+    const status = document.getElementById('nearStatus');
+    status.textContent = '⏳ Getting GPS location…';
+    navigator.geolocation.getCurrentPosition(
+        pos => setUserLocation(pos.coords.latitude, pos.coords.longitude),
+        err => {
+            status.textContent = '';
+            console.warn(err);
+            alert('Could not get your GPS location.\nTry clicking the map instead.');
+        },
+        { timeout: 8000, maximumAge: 60000 }
+    );
+});
+
+// ── Clear button ──────────────────────────────────────────────────────────
+
+document.getElementById('btnClearLoc').addEventListener('click', clearUserLocation);
+
+// ── Click map to set position ─────────────────────────────────────────────
+
+map3.on('click', e => setUserLocation(e.latlng.lat, e.latlng.lng));
+
+// ════════════════════════════════════════════
 //  FORM MODE TOGGLE  (source / issue)
 // ════════════════════════════════════════════
 
@@ -999,6 +1256,7 @@ document.getElementById('entryForm').addEventListener('submit', async e => {
     entries.push(entry);
     addToMap1(entry);
     addToMap2(entry);
+    addToMap3(entry);
     renderEntryPanels();
     renderFoodFinder();
     updateSimVisibility();
@@ -1520,17 +1778,44 @@ function setConsumerFilter(el, filter) {
 }
 
 function renderFoodFinder() {
-    const el = document.getElementById('foodFinder');
-    const list = entries.filter(e => {
-        if (e.mode !== 'source') return false;
-        return consumerFilter === 'all' || e.sourceType === consumerFilter;
-    });
+    const el      = document.getElementById('foodFinder');
+    const km      = userLat !== null
+        ? parseInt(document.getElementById('radiusSel').value)
+        : null;
+
+    // Build list — apply category filter and optionally radius filter
+    let list = entries
+        .filter(e => e.mode === 'source')
+        .filter(e => consumerFilter === 'all' || e.sourceType === consumerFilter)
+        .map(e => ({
+            ...e,
+            _dist: (userLat !== null)
+                ? haversine(userLat, userLng, e.lat, e.lng)
+                : null
+        }));
+
+    // When location is set, keep only entries inside the radius
+    if (km !== null) list = list.filter(e => e._dist <= km);
+
+    // Sort by distance when available, otherwise by newest first
+    if (userLat !== null) {
+        list.sort((a, b) => a._dist - b._dist);
+    } else {
+        list.sort((a, b) => b.id - a.id);
+    }
 
     if (list.length === 0) {
+        const context = km !== null
+            ? `within ${km} km of your location`
+            : 'yet';
+        const cat = consumerFilter === 'all' ? 'sources' : `${consumerFilter}s`;
         el.innerHTML = `<div class="ff-empty">
-            ${consumerFilter === 'all'
-                ? 'No sources collected yet — add farms, markets and cooperatives in Section 1.'
-                : `No ${consumerFilter} entries collected yet.`}
+            No ${cat} collected ${context}.<br>
+            <span style="font-size:11px;">
+                ${km !== null
+                    ? 'Try increasing the radius or clear your location to see all.'
+                    : 'Add farms, markets and cooperatives in Section 1.'}
+            </span>
         </div>`;
         return;
     }
@@ -1539,12 +1824,25 @@ function renderFoodFinder() {
         const cfg = SOURCE_TYPES[entry.sourceType] || SOURCE_TYPES.farm;
         const oc  = ORIGIN_COLOR[entry.origin] || '#888';
         const ol  = ORIGIN_LABEL[entry.origin] || '';
+
+        const distBadge = entry._dist !== null
+            ? `<div class="dist-badge">
+                   📍 ${entry._dist < 1
+                       ? `${(entry._dist * 1000).toFixed(0)} m away`
+                       : `${entry._dist.toFixed(1)} km away`}
+               </div>`
+            : '';
+
         return `
             <div class="ff-card" onclick="focusMap1(${entry.id})">
                 <div class="ff-icon">${cfg.emoji}</div>
                 <div class="ff-title">${escapeHtml(entry.title)}</div>
-                <span class="ff-tag" style="background:${oc}22;color:${oc};">${ol}</span>
-                <div class="ff-desc">${escapeHtml(entry.desc) || 'No description.'}</div>
+                <span class="ff-tag"
+                      style="background:${oc}22;color:${oc};">${ol}</span>
+                ${distBadge}
+                <div class="ff-desc">
+                    ${escapeHtml(entry.desc) || 'No description.'}
+                </div>
                 ${entry.products
                     ? `<div class="ff-products">🌱 ${escapeHtml(entry.products)}</div>`
                     : ''}
@@ -1744,13 +2042,16 @@ document.getElementById('loadJson').addEventListener('change', async e => {
         Object.values(simSrcMarkers).forEach(m => map2.removeLayer(m));
         Object.values(simIssMarkers).forEach(m => map2.removeLayer(m));
         map1Markers = {}; simSrcMarkers = {}; simIssMarkers = {};
-
+        Object.values(map3Markers).forEach(m => map3.removeLayer(m));
+        map3Markers = {};
+        clearUserLocation();
         entries = loaded;
         // In fallback, entry.image IS the base64 src
         entries.forEach(entry => {
             entry._imageUrl = entry.image || null;
             addToMap1(entry);
             addToMap2(entry);
+            addToMap3(entry);
         });
         renderEntryPanels();
         renderFoodFinder();
